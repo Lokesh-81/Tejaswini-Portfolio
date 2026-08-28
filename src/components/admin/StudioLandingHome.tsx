@@ -110,7 +110,7 @@ export const StudioLandingHome: React.FC<StudioLandingHomeProps> = ({
       number: '09',
       id: 'resume',
       title: 'Resume & Documents',
-      desc: 'Upload official PDF curriculum vitae to Firebase Storage and trigger interactive CV reader.',
+      desc: 'Manage official PDF curriculum vitae links and launch interactive CV reader.',
       badge: 'PDF Synced',
       icon: FileText,
       actionText: 'Manage Resume'

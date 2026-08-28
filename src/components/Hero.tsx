@@ -1,18 +1,15 @@
 import React from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
 import { ArrowDown, FileText, Mail, ArrowUpRight } from 'lucide-react';
-import { HeroImageFrame } from './HeroImageFrame';
+import { HeroAbstractVisual } from './HeroAbstractVisual';
 
 export const Hero: React.FC = () => {
   const { data, setIsResumeModalOpen } = usePortfolio();
   const heroData = data.hero;
-  const heroImgUrl = heroData.heroImage || data.personalInfo.profilePhoto;
-  const showHeroImg = heroData.showHeroImage !== false && !!heroImgUrl;
   const placement = heroData.heroImagePlacement || 'side-right';
-  const shape = heroData.heroImageShape || 'archival';
 
-  // 1. Placement: Side-Right (Editorial Split Layout)
-  if (showHeroImg && placement === 'side-right') {
+  // 1. Placement: Side-Right (Default Editorial Split Layout with Abstract Analytical Visual)
+  if (placement === 'side-right') {
     return (
       <section
         id="hero"
@@ -93,11 +90,9 @@ export const Hero: React.FC = () => {
 
           </div>
 
-          {/* Hero Feature Image (Right Column) */}
+          {/* Hero Feature Visual (Right Column) */}
           <div className="lg:col-span-5 flex justify-center lg:justify-end max-w-sm sm:max-w-md mx-auto w-full">
-            <HeroImageFrame
-              imageUrl={heroImgUrl}
-              shape={shape}
+            <HeroAbstractVisual
               name={data.personalInfo.name}
               className="w-full"
             />
@@ -108,7 +103,7 @@ export const Hero: React.FC = () => {
     );
   }
 
-  // 2. Default & Alternate Placements: Centered layouts (center-top, center-bottom, badge-corner, or no image)
+  // 2. Alternate Placements: Centered layouts
   return (
     <section
       id="hero"
@@ -116,14 +111,10 @@ export const Hero: React.FC = () => {
     >
       <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
         
-        {/* Placement: Center-Top (Portrait above Headline) */}
-        {showHeroImg && placement === 'center-top' && (
-          <div className="mb-6">
-            <HeroImageFrame
-              imageUrl={heroImgUrl}
-              shape={shape === 'archival' ? 'circle' : shape}
-              name={data.personalInfo.name}
-            />
+        {/* Placement: Center-Top */}
+        {placement === 'center-top' && (
+          <div className="mb-8 w-full max-w-sm mx-auto">
+            <HeroAbstractVisual name={data.personalInfo.name} />
           </div>
         )}
 
@@ -195,14 +186,10 @@ export const Hero: React.FC = () => {
           </a>
         </div>
 
-        {/* Placement: Center-Bottom (Banner below CTA) */}
-        {showHeroImg && placement === 'center-bottom' && (
-          <div className="mt-12 w-full max-w-xl mx-auto">
-            <HeroImageFrame
-              imageUrl={heroImgUrl}
-              shape={shape}
-              name={data.personalInfo.name}
-            />
+        {/* Placement: Center-Bottom */}
+        {placement === 'center-bottom' && (
+          <div className="mt-12 w-full max-w-md mx-auto">
+            <HeroAbstractVisual name={data.personalInfo.name} />
           </div>
         )}
 
@@ -210,4 +197,3 @@ export const Hero: React.FC = () => {
     </section>
   );
 };
-

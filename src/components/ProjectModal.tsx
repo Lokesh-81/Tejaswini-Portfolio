@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProjectItem } from '../types';
 import { X, Github, ExternalLink, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { ProjectVisualCard } from './ProjectVisualCard';
 
 interface ProjectModalProps {
   project: ProjectItem | null;
@@ -41,15 +42,13 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
           </p>
         </div>
 
-        {/* Hero Image */}
-        <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-[#F0EBE1] border border-[#E2D9CC] shadow-xs">
-          <img
-            src={project.heroImage}
-            alt={project.title}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
+        {/* Project Analytical Visual Card Component */}
+        <div className="relative rounded-2xl overflow-hidden shadow-xs">
+          <ProjectVisualCard
+            projectId={project.id}
+            title={project.title}
+            category={project.category}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#201D1A]/30 via-transparent to-transparent opacity-50" />
         </div>
 
         {/* Overview & Problem / Solution */}
@@ -65,74 +64,68 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
           </div>
         </div>
 
-        {/* Business Value & Key Results */}
-        <div className="p-6 sm:p-7 rounded-2xl bg-white/80 border border-[#E7E0D5] space-y-4">
-          <h4 className="text-xs font-mono-code text-[#9A7B61] uppercase tracking-wider font-semibold">03 / BUSINESS IMPACT & KEY OUTCOMES</h4>
-          {project.businessValue && (
-            <p className="text-sm font-serif italic text-[#201D1A]">{project.businessValue}</p>
-          )}
-
-          {project.results && project.results.length > 0 && (
-            <ul className="space-y-2 pt-3 border-t border-[#EFE9DF]">
+        {/* Key Measurable Outcomes */}
+        {project.results && project.results.length > 0 && (
+          <div className="space-y-4">
+            <h4 className="text-xs font-mono-code text-[#9A7B61] uppercase tracking-wider font-semibold">
+              03 / MEASURABLE IMPACT & RESULTS
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {project.results.map((res, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-[#6B645C]">
-                  <CheckCircle2 className="w-4 h-4 text-[#9A7B61] mt-0.5 flex-shrink-0" />
-                  <span>{res}</span>
-                </li>
+                <div key={i} className="flex items-start gap-2.5 p-4 rounded-xl bg-white border border-[#E7E0D5]">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="text-xs sm:text-sm text-[#4A443D]">{res}</span>
+                </div>
               ))}
-            </ul>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
 
-        {/* Tech Stack */}
-        <div className="space-y-2">
-          <div className="text-xs font-mono-code text-[#7A7268] uppercase font-semibold">TECHNOLOGIES & PIPELINES USED</div>
+        {/* Technologies / Tools Matrix */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-mono-code text-[#9A7B61] uppercase tracking-wider font-semibold">
+            04 / INSTRUMENTS & PIPELINES
+          </h4>
           <div className="flex flex-wrap gap-2">
-            {project.technologies.map((t) => (
-              <span key={t} className="px-3 py-1 rounded-lg text-xs font-mono-code bg-white text-[#4A443D] border border-[#E2D9CC]">
+            {project.technologies.map((t, idx) => (
+              <span 
+                key={idx}
+                className="px-3.5 py-1.5 rounded-full text-xs font-mono-code bg-[#FAF8F5] text-[#201D1A] border border-[#E2D9CC]"
+              >
                 {t}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-[#E7E0D5]">
-          <div className="flex items-center gap-3">
-            {project.githubUrl && (
-              <a
-                href={project.githubUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-[#201D1A] bg-white hover:bg-[#F4EFE6] border border-[#E2D9CC] transition-colors shadow-2xs"
-              >
-                <Github className="w-4 h-4" />
-                <span>GitHub Repository</span>
-              </a>
-            )}
-            {project.liveDemoUrl && (
-              <a
-                href={project.liveDemoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] transition-colors shadow-xs"
-              >
-                <span>Live Interactive Demo</span>
-                <ExternalLink className="w-3.5 h-3.5 text-[#C4A482]" />
-              </a>
-            )}
-          </div>
+        {/* Modal Action Buttons */}
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-[#E7E0D5]">
+          {project.githubUrl && (
+            <a
+              href={project.githubUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-[#201D1A] bg-white hover:bg-[#F4EFE6] border border-[#E2D9CC] shadow-2xs transition-colors"
+            >
+              <Github className="w-4 h-4" />
+              <span>Source Repository</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#9A7B61]" />
+            </a>
+          )}
 
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-full text-xs font-medium text-[#7A7268] hover:text-[#201D1A] cursor-pointer"
-          >
-            Close Case Study
-          </button>
+          {project.liveDemoUrl && (
+            <a
+              href={project.liveDemoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs transition-colors"
+            >
+              <ExternalLink className="w-4 h-4 text-[#C4A482]" />
+              <span>Live Application</span>
+            </a>
+          )}
         </div>
-
       </div>
     </div>
   );
 };
-

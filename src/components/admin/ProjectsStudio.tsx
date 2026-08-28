@@ -8,8 +8,10 @@ import {
   Edit3, 
   MoveUp, 
   MoveDown,
+  Sparkles,
+  BarChart3,
+  Layers
 } from 'lucide-react';
-import { UniversalImageUploader } from './UniversalImageUploader';
 
 export const ProjectsStudio: React.FC = () => {
   const { data, addProject, updateProject, deleteProject, duplicateProject, reorderProjects } = usePortfolio();
@@ -21,100 +23,108 @@ export const ProjectsStudio: React.FC = () => {
     title: '',
     subtitle: '',
     description: '',
-    heroImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
     overview: '',
     problem: '',
     solution: '',
     technologies: ['Python', 'Pandas', 'Machine Learning'],
     businessValue: '',
     results: ['Extracted actionable business insights from dataset.'],
-    githubUrl: 'https://github.com/tejaswini-pamula',
-    liveDemoUrl: '',
     featured: true,
-    category: 'Data Analytics'
+    category: 'Data Analytics',
+    githubUrl: '',
+    liveDemoUrl: ''
   };
 
   const [formData, setFormData] = useState<Omit<ProjectItem, 'id'>>(defaultNewProject);
   const [techInput, setTechInput] = useState('');
   const [resultInput, setResultInput] = useState('');
 
-  const handleStartCreate = () => {
-    setFormData(defaultNewProject);
-    setTechInput(defaultNewProject.technologies.join(', '));
-    setResultInput(defaultNewProject.results.join('\n'));
-    setEditingProject(null);
-    setIsCreatingNew(true);
+  const handleStartEdit = (project: ProjectItem) => {
+    setEditingProject(project);
+    setIsCreatingNew(false);
+    setFormData({
+      title: project.title,
+      subtitle: project.subtitle,
+      description: project.description,
+      heroImage: project.heroImage || '',
+      overview: project.overview || '',
+      problem: project.problem || '',
+      solution: project.solution || '',
+      technologies: project.technologies || [],
+      businessValue: project.businessValue || '',
+      results: project.results || [],
+      featured: project.featured ?? true,
+      category: project.category || 'Data Analytics',
+      githubUrl: project.githubUrl || '',
+      liveDemoUrl: project.liveDemoUrl || ''
+    });
+    setTechInput((project.technologies || []).join(', '));
+    setResultInput((project.results || []).join('\n'));
   };
 
-  const handleStartEdit = (proj: ProjectItem) => {
-    setEditingProject(proj);
-    setFormData({
-      title: proj.title,
-      subtitle: proj.subtitle,
-      description: proj.description,
-      heroImage: proj.heroImage,
-      overview: proj.overview,
-      problem: proj.problem,
-      solution: proj.solution,
-      technologies: proj.technologies,
-      businessValue: proj.businessValue,
-      results: proj.results,
-      githubUrl: proj.githubUrl,
-      liveDemoUrl: proj.liveDemoUrl,
-      featured: proj.featured,
-      category: proj.category
-    });
-    setTechInput(proj.technologies.join(', '));
-    setResultInput(proj.results.join('\n'));
-    setIsCreatingNew(false);
+  const handleStartNew = () => {
+    setEditingProject(null);
+    setIsCreatingNew(true);
+    setFormData(defaultNewProject);
+    setTechInput('Python, Pandas, Machine Learning');
+    setResultInput('Extracted actionable business insights from dataset.');
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedTech = techInput.split(',').map(t => t.trim()).filter(Boolean);
-    const parsedResults = resultInput.split('\n').map(r => r.trim()).filter(Boolean);
+    const techArray = techInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const resultsArray = resultInput
+      .split('\n')
+      .map((r) => r.trim())
+      .filter(Boolean);
 
-    const payload = {
+    const projectPayload = {
       ...formData,
-      technologies: parsedTech.length > 0 ? parsedTech : ['Python'],
-      results: parsedResults.length > 0 ? parsedResults : ['Completed project analysis.']
+      technologies: techArray,
+      results: resultsArray
     };
 
     if (editingProject) {
-      await updateProject(editingProject.id, payload);
+      await updateProject(editingProject.id, projectPayload);
+      setEditingProject(null);
     } else {
-      await addProject(payload);
+      await addProject(projectPayload);
+      setIsCreatingNew(false);
     }
-
-    setEditingProject(null);
-    setIsCreatingNew(false);
   };
 
   const handleMove = (index: number, direction: 'up' | 'down') => {
-    const newProjects = [...data.projects];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newProjects.length) return;
-    const [moved] = newProjects.splice(index, 1);
-    newProjects.splice(targetIndex, 0, moved);
-    reorderProjects(newProjects);
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= data.projects.length) return;
+    
+    const items = [...data.projects];
+    const [moved] = items.splice(index, 1);
+    items.splice(newIndex, 0, moved);
+    
+    const reorderedIds = items.map((p) => p.id);
+    reorderProjects(reorderedIds);
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24">
+    <div className="max-w-4xl mx-auto space-y-8 pb-24">
       
-      {/* Studio View Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E7E0D5]">
         <div>
           <div className="text-xs font-mono-code text-[#9A7B61] uppercase tracking-wider mb-1">
-            02 / CASE STUDIES & PROJECTS STUDIO
+            02 / CASE STUDIES & RESEARCH REPOSITORY
           </div>
           <h2 className="text-2xl sm:text-3xl font-serif text-[#201D1A] font-normal">
-            Manage Case Studies
+            Project Dossiers & Inquiries
           </h2>
         </div>
 
         <button
-          onClick={handleStartCreate}
+          onClick={handleStartNew}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 text-[#C4A482]" />
@@ -177,13 +187,16 @@ export const ProjectsStudio: React.FC = () => {
               />
             </div>
 
-            <UniversalImageUploader
-              label="Case Study Hero Cover Image"
-              value={formData.heroImage}
-              onChange={(url) => setFormData({ ...formData, heroImage: url })}
-              sectionName="Project Case Studies"
-              helperText="Upload project banner or dashboard screenshot via Drag & Drop, Google Drive link, or library."
-            />
+            {/* Visual Component Notice */}
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EAE4DB] flex items-center justify-between text-xs text-[#524B43]">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-[#9A7B61]" />
+                <span>Visual Card: Rendered natively via code-based telemetry card</span>
+              </div>
+              <span className="text-[11px] font-mono-code text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Zero Cloud Storage Required
+              </span>
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-mono-code text-[#7A7268]">SHORT DESCRIPTION</label>
@@ -254,44 +267,33 @@ export const ProjectsStudio: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-mono-code text-[#7A7268]">GITHUB REPO URL</label>
+                <label className="text-xs font-mono-code text-[#7A7268]">GITHUB REPOSITORY URL</label>
                 <input
                   type="url"
                   value={formData.githubUrl}
                   onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                  placeholder="https://github.com/..."
+                  placeholder="https://github.com/tejaswinipamula/..."
                   className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E2D9CC] text-sm text-[#201D1A] focus:border-[#201D1A] focus:outline-none"
                 />
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-xs font-mono-code text-[#7A7268]">LIVE DEMO URL</label>
+                <label className="text-xs font-mono-code text-[#7A7268]">LIVE DEMO / NOTEBOOK URL</label>
                 <input
-                  type="text"
+                  type="url"
                   value={formData.liveDemoUrl}
                   onChange={(e) => setFormData({ ...formData, liveDemoUrl: e.target.value })}
-                  placeholder="https://... or #demo-netflix"
+                  placeholder="https://..."
                   className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E2D9CC] text-sm text-[#201D1A] focus:border-[#201D1A] focus:outline-none"
                 />
               </div>
-            </div>
-
-            <div className="flex items-center gap-3 pt-4 border-t border-[#E7E0D5]">
-              <label className="flex items-center gap-2 text-xs font-mono-code text-[#6B645C] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.featured}
-                  onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                  className="w-4 h-4 rounded text-[#201D1A]"
-                />
-                <span>Feature on Main Showcase</span>
-              </label>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E7E0D5]">
               <button
                 type="button"
                 onClick={() => { setEditingProject(null); setIsCreatingNew(false); }}
-                className="px-5 py-2.5 rounded-xl text-xs font-medium text-[#6B645C] hover:text-[#201D1A]"
+                className="px-5 py-2.5 rounded-xl text-xs font-medium text-[#6B645C] hover:text-[#201D1A] bg-[#FAF8F5] border border-[#E2D9CC]"
               >
                 Cancel
               </button>
@@ -314,13 +316,8 @@ export const ProjectsStudio: React.FC = () => {
             className="p-6 rounded-3xl bg-white/80 border border-[#E7E0D5] hover:border-[#C4A482] transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs"
           >
             <div className="flex items-start gap-4">
-              <div className="w-20 h-14 rounded-xl overflow-hidden bg-[#FAF8F5] flex-shrink-0 border border-[#E2D9CC]">
-                <img
-                  src={project.heroImage}
-                  alt={project.title}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
+              <div className="w-12 h-12 rounded-xl bg-[#181615] flex items-center justify-center text-[#C4A482] flex-shrink-0 border border-[#38312B]">
+                <BarChart3 className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -382,4 +379,3 @@ export const ProjectsStudio: React.FC = () => {
     </div>
   );
 };
-

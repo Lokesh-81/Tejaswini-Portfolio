@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
-import { GraduationCap, Award, MapPin, Feather, FileSpreadsheet, Sparkles } from 'lucide-react';
+import { GraduationCap, Award, MapPin, Feather, FileSpreadsheet } from 'lucide-react';
+import { AboutProfileCard } from './AboutProfileCard';
 
 export const About: React.FC = () => {
   const { data } = usePortfolio();
@@ -24,38 +25,15 @@ export const About: React.FC = () => {
         {/* Asymmetric Field Journal Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           
-          {/* Left Column: Tactile Archival Portrait & Layered Study Notes */}
+          {/* Left Column: Tactile Archival Identity & Layered Study Notes */}
           <div className="lg:col-span-5 space-y-8">
             
-            {/* Layered Archival Portrait Card */}
-            <div className="relative group">
-              {/* Backing paper depth layer */}
-              <div className="absolute -inset-2 rounded-3xl bg-[#EAE3D6]/70 transform -rotate-1 transition-transform group-hover:-rotate-2 duration-500 pointer-events-none" />
-              <div className="relative rounded-3xl overflow-hidden bg-[#FAF8F5] border border-[#E2D9CC] aspect-[4/5] shadow-[0_12px_40px_rgba(36,33,30,0.06)]">
-                <img
-                  src={personalInfo.profilePhoto}
-                  alt={personalInfo.name}
-                  className="w-full h-full object-cover transition-all duration-700 group-hover:scale-103 filter contrast-[1.02]"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#201D1A]/80 via-transparent to-transparent opacity-90" />
-                
-                {/* Paper Corner Stamp */}
-                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-[#FAF8F5]/90 backdrop-blur-md border border-[#E2D9CC] text-[10px] font-mono-code text-[#201D1A] shadow-2xs">
-                  ARCHIVE REF // TP-2026
-                </div>
-
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="text-2xl font-serif text-white font-medium">{personalInfo.name}</div>
-                  <div className="text-xs text-[#EAE4DB] font-mono-code mt-0.5">{personalInfo.title}</div>
-                  <div className="flex items-center gap-1.5 text-xs text-[#D6C9B8] mt-2">
-                    <MapPin className="w-3.5 h-3.5 text-[#C4A482]" />
-                    <span>{personalInfo.location}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Layered Archival Identity Card */}
+            <AboutProfileCard
+              name={personalInfo.name}
+              title={personalInfo.title}
+              location={personalInfo.location}
+            />
 
             {/* Handwritten Marginalia Note */}
             <div className="p-6 rounded-2xl bg-[#FAF8F5] border border-[#EAE4DB] relative shadow-2xs">

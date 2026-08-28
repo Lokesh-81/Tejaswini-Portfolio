@@ -15,17 +15,11 @@ import { initialPortfolioData } from '../data/initialData';
 import {
   db,
   auth,
-  storage,
   doc,
   getDoc,
   setDoc,
   collection,
   onSnapshot,
-  ref,
-  uploadBytes,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   fbSignOut,
@@ -34,8 +28,7 @@ import {
   sendPasswordResetEmail,
   getIdTokenResult,
   User,
-  currentFirebaseProjectId,
-  currentFirebaseStorageBucket
+  currentFirebaseProjectId
 } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrors';
 
@@ -957,135 +950,10 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const uploadFileToStorage = async (
     file: File,
-    sectionName?: string,
-    onProgress?: (percent: number) => void
+    _sectionName?: string,
+    _onProgress?: (percent: number) => void
   ): Promise<MediaItem> => {
-    // 1. Verify user authentication
-    if (!auth.currentUser) {
-      throw new Error('Authentication required: You must be logged in as an administrator to upload files.');
-    }
-
-    // 2. Validate file type and size
-    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.pdf'];
-    const fileNameLower = file.name.toLowerCase();
-    const hasValidExtension = validExtensions.some(ext => fileNameLower.endsWith(ext));
-    if (!hasValidExtension && !file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      throw new Error(`Unsupported file type (${file.type || 'unknown'}). Please upload JPG, PNG, WebP, SVG, GIF, or PDF.`);
-    }
-
-    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
-    if (file.size > MAX_FILE_SIZE) {
-      throw new Error(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 25 MB.`);
-    }
-
-    const isPdf = file.type === 'application/pdf' || fileNameLower.endsWith('.pdf');
-    const isSvg = file.type === 'image/svg+xml' || fileNameLower.endsWith('.svg');
-    const mediaType: 'image' | 'pdf' | 'icon' = isPdf ? 'pdf' : isSvg ? 'icon' : 'image';
-    const readableSize = file.size > 1024 * 1024 
-      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
-      : `${(file.size / 1024).toFixed(0)} KB`;
-
-    // 3. Prepare clean, unique storage path
-    const sanitizedName = file.name
-      .replace(/[^a-zA-Z0-9._-]/g, '_')
-      .replace(/_+/g, '_');
-    const storagePath = `portfolio_assets/${Date.now()}_${sanitizedName}`;
-    const storageRef = ref(storage, storagePath);
-
-    // 4. Resumable upload with progress and 45s safety timeout
-    const contentType = file.type || (isPdf ? 'application/pdf' : isSvg ? 'image/svg+xml' : 'image/jpeg');
-    const uploadTask = uploadBytesResumable(storageRef, file, {
-      contentType,
-      cacheControl: 'public, max-age=31536000'
-    });
-
-    const uploadPromise = new Promise<string>((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          if (snapshot.totalBytes > 0) {
-            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            if (onProgress) onProgress(percent);
-          }
-        },
-        (error) => {
-          console.error('Firebase Storage upload task error:', error);
-          reject(error);
-        },
-        async () => {
-          try {
-            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadUrl);
-          } catch (urlErr) {
-            console.error('Failed to get download URL after upload:', urlErr);
-            reject(urlErr);
-          }
-        }
-      );
-    });
-
-    // 45 second timeout race
-    const timeoutPromise = new Promise<string>((_, reject) => {
-      setTimeout(() => {
-        try {
-          uploadTask.cancel();
-        } catch (_) {
-          // ignore cancel error
-        }
-        reject(new Error('Firebase Storage upload timed out after 45 seconds. Please check your network connection and retry.'));
-      }, 45000);
-    });
-
-    let finalUrl: string;
-    try {
-      finalUrl = await Promise.race([uploadPromise, timeoutPromise]);
-    } catch (uploadErr: any) {
-      console.error('Firebase Storage upload failed:', uploadErr);
-      const code = uploadErr?.code || '';
-      let message = uploadErr?.message || 'Storage upload failed.';
-
-      if (code === 'storage/unknown' || message.includes('404') || message.includes('not found') || message.includes('specified bucket does not exist')) {
-        message = `Firebase Storage bucket "${currentFirebaseStorageBucket}" is not yet enabled or does not exist in project "${currentFirebaseProjectId}". To enable it: Open Firebase Console → Build → Storage → Click "Get started" (or add your production VITE_FIREBASE_STORAGE_BUCKET in Vercel environment variables).`;
-      } else if (code === 'storage/unauthorized' || code === 'storage/unauthenticated' || message.includes('permission')) {
-        message = 'Firebase Storage permission denied: Make sure you are logged in as an authorized administrator (poosala15@gmail.com) and storage.rules are deployed.';
-      } else if (code === 'storage/quota-exceeded' || message.includes('quota')) {
-        message = 'Firebase Storage quota exceeded for this project.';
-      } else if (code === 'storage/retry-limit-exceeded' || message.includes('timeout') || message.includes('timed out')) {
-        message = `Upload timed out. This occurs when the storage bucket "${currentFirebaseStorageBucket}" is unreachable or not created in Firebase Console.`;
-      }
-
-      throw new Error(message);
-    }
-
-    if (!finalUrl || !finalUrl.startsWith('http')) {
-      throw new Error('Upload completed but failed to obtain a valid public storage URL.');
-    }
-
-    // 5. Build MediaItem metadata
-    const newMedia: MediaItem = {
-      id: `media-${Date.now()}`,
-      name: file.name,
-      url: finalUrl,
-      type: mediaType,
-      size: readableSize,
-      uploadedAt: new Date().toISOString().substring(0, 10),
-      usedInSection: sectionName || 'General Studio Assets',
-      altText: file.name.replace(/\.[^/.]+$/, ''),
-      description: `Uploaded ${file.name} to portfolio media library.`
-    };
-
-    // 6. Persist to Firestore
-    const updated: PortfolioData = {
-      ...data,
-      mediaLibrary: [newMedia, ...data.mediaLibrary]
-    };
-
-    const saved = await syncToFirestore(updated);
-    if (!saved) {
-      console.warn('Media file uploaded to storage but Firestore metadata sync returned false. Local state preserved.');
-    }
-
-    return newMedia;
+    throw new Error('Firebase Storage uploads have been decommissioned. Portfolio case studies, hero features, and visual cards are now rendered purely via vector CSS components.');
   };
 
   const updateMediaItem = async (id: string, updates: Partial<MediaItem>) => {
@@ -1097,15 +965,6 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteMediaItem = async (id: string) => {
-    const target = data.mediaLibrary.find(m => m.id === id);
-    if (target && target.url.includes('firebasestorage.googleapis.com')) {
-      try {
-        const fileRef = ref(storage, target.url);
-        await deleteObject(fileRef);
-      } catch (err) {
-        console.warn('Could not delete storage file object:', err);
-      }
-    }
     const updated: PortfolioData = {
       ...data,
       mediaLibrary: data.mediaLibrary.filter((m) => m.id !== id)

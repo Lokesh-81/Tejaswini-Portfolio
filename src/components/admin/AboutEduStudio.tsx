@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
-import { Plus, Trash2, Check, Sparkles } from 'lucide-react';
-import { UniversalImageUploader } from './UniversalImageUploader';
+import { Plus, Trash2, Check, Sparkles, UserCheck } from 'lucide-react';
 
 export const AboutEduStudio: React.FC = () => {
   const { data, updatePersonalInfo, addEducation, deleteEducation } = usePortfolio();
@@ -82,14 +81,15 @@ export const AboutEduStudio: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <UniversalImageUploader
-            label="Biography Archival Portrait / Profile Photo"
-            value={personalInfo.profilePhoto}
-            onChange={(url) => setPersonalInfo({ ...personalInfo, profilePhoto: url })}
-            sectionName="Biography & About Section"
-            helperText="Drag & drop your portrait, link Google Drive photo, or pick from the media library. Shown on the editorial journal portrait card."
-          />
+        {/* Visual Notice */}
+        <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EAE4DB] flex items-center justify-between text-xs text-[#524B43]">
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-[#9A7B61]" />
+            <span>Profile Visual: Rendered natively via code-based archival identity card</span>
+          </div>
+          <span className="text-[11px] font-mono-code text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+            Vector Component
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -139,72 +139,88 @@ export const AboutEduStudio: React.FC = () => {
       <div className="p-8 rounded-3xl bg-white border border-[#E7E0D5] space-y-6 shadow-2xs">
         <div className="flex items-center justify-between pb-3 border-b border-[#E7E0D5]">
           <h3 className="text-lg font-serif text-[#201D1A] font-medium">
-            Academic Degrees & Education
+            Academic Foundation & Degrees
           </h3>
           <button
             onClick={() => setShowAddEdu(!showAddEdu)}
-            className="text-xs font-medium text-[#7C5E47] hover:text-[#201D1A] flex items-center gap-1 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-[#C4A482]" />
             <span>Add Degree</span>
           </button>
         </div>
 
         {showAddEdu && (
-          <form onSubmit={handleAddEdu} className="p-6 rounded-2xl bg-[#FAF8F5] border border-[#E2D9CC] space-y-4">
+          <form onSubmit={handleAddEdu} className="p-6 rounded-2xl bg-[#FAF8F5] border border-[#C4A482] space-y-4 animate-in fade-in">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                required
-                placeholder="Degree (e.g. Bachelor of Technology)"
-                value={newDegree.degree}
-                onChange={(e) => setNewDegree({ ...newDegree, degree: e.target.value })}
-                className="px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
-              />
-              <input
-                type="text"
-                required
-                placeholder="Field (e.g. Computer Science & Engineering)"
-                value={newDegree.field}
-                onChange={(e) => setNewDegree({ ...newDegree, field: e.target.value })}
-                className="px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
-              />
+              <div>
+                <label className="text-xs font-mono-code text-[#6B645C] block mb-1">DEGREE *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. B.Tech in Artificial Intelligence & Data Science"
+                  value={newDegree.degree}
+                  onChange={(e) => setNewDegree({ ...newDegree, degree: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-mono-code text-[#6B645C] block mb-1">INSTITUTION *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Shri Vishnu Engineering College for Women"
+                  value={newDegree.institution}
+                  onChange={(e) => setNewDegree({ ...newDegree, institution: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
+                />
+              </div>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <input
-                type="text"
-                required
-                placeholder="Institution (e.g. SVECW, Bhimavaram)"
-                value={newDegree.institution}
-                onChange={(e) => setNewDegree({ ...newDegree, institution: e.target.value })}
-                className="px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
-              />
-              <input
-                type="text"
-                placeholder="Period (e.g. 2021 – 2025)"
-                value={newDegree.period}
-                onChange={(e) => setNewDegree({ ...newDegree, period: e.target.value })}
-                className="px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
-              />
-              <input
-                type="text"
-                placeholder="CGPA (e.g. 7.43 CGPA)"
-                value={newDegree.cgpa}
-                onChange={(e) => setNewDegree({ ...newDegree, cgpa: e.target.value })}
-                className="px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
-              />
+              <div>
+                <label className="text-xs font-mono-code text-[#6B645C] block mb-1">PERIOD</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2021 – 2025"
+                  value={newDegree.period}
+                  onChange={(e) => setNewDegree({ ...newDegree, period: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-mono-code text-[#6B645C] block mb-1">FIELD OF STUDY</label>
+                <input
+                  type="text"
+                  placeholder="e.g. AI & Data Science"
+                  value={newDegree.field}
+                  onChange={(e) => setNewDegree({ ...newDegree, field: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-mono-code text-[#6B645C] block mb-1">CGPA / SCORE</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 8.77 / 10.0"
+                  value={newDegree.cgpa}
+                  onChange={(e) => setNewDegree({ ...newDegree, cgpa: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2D9CC] text-xs text-[#201D1A]"
+                />
+              </div>
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowAddEdu(false)}
-                className="px-4 py-2 rounded-full text-xs text-[#6B645C] hover:text-[#201D1A] cursor-pointer"
+                className="px-4 py-1.5 text-xs text-[#6B645C] hover:text-[#201D1A]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-full text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs cursor-pointer"
+                className="px-4 py-1.5 rounded-xl text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C]"
               >
                 Save Degree
               </button>
@@ -212,19 +228,21 @@ export const AboutEduStudio: React.FC = () => {
           </form>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {data.education.map((edu) => (
             <div
               key={edu.id}
-              className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E2D9CC] flex items-center justify-between gap-4"
+              className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#E2D9CC] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
               <div>
-                <h4 className="text-sm font-serif text-[#201D1A] font-medium">{edu.degree} — {edu.field}</h4>
-                <p className="text-xs text-[#6B645C]">{edu.institution} • {edu.period} ({edu.cgpa})</p>
+                <div className="text-sm font-serif text-[#201D1A] font-medium">{edu.degree}</div>
+                <div className="text-xs text-[#6B645C] mt-0.5">{edu.institution} • {edu.period}</div>
+                <div className="text-[11px] font-mono-code text-[#9A7B61] mt-1">CGPA: {edu.cgpa}</div>
               </div>
+
               <button
                 onClick={() => deleteEducation(edu.id)}
-                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer self-end sm:self-auto"
                 title="Delete Degree"
               >
                 <Trash2 className="w-4 h-4" />
@@ -237,4 +255,3 @@ export const AboutEduStudio: React.FC = () => {
     </div>
   );
 };
-

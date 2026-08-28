@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { CertificationItem } from '../../types';
-import { Plus, Trash2, Edit3 } from 'lucide-react';
-import { UniversalImageUploader } from './UniversalImageUploader';
+import { Plus, Trash2, Edit3, Award, ExternalLink, Sparkles } from 'lucide-react';
 
 export const CertificationsStudio: React.FC = () => {
   const { data, addCertification, updateCertification, deleteCertification } = usePortfolio();
@@ -16,7 +15,7 @@ export const CertificationsStudio: React.FC = () => {
     issueDate: '2025',
     credentialId: '',
     verificationLink: '',
-    imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800'
+    imageUrl: ''
   };
 
   const [formData, setFormData] = useState<Omit<CertificationItem, 'id'>>(defaultNew);
@@ -149,59 +148,87 @@ export const CertificationsStudio: React.FC = () => {
             />
           </div>
 
-          <UniversalImageUploader
-            label="Certificate Badge / Document Preview Image"
-            value={formData.imageUrl || ''}
-            onChange={(url) => setFormData({ ...formData, imageUrl: url })}
-            sectionName="Certifications Archive"
-            helperText="Drag & drop certificate badge, paste Google Drive file, or select from media library."
-          />
+          <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EAE4DB] flex items-center justify-between text-xs text-[#524B43]">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#9A7B61]" />
+              <span>Card Graphic: Rendered via built-in CSS/SVG badge system</span>
+            </div>
+            <span className="text-[11px] font-mono-code text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              Code-Driven Visual
+            </span>
+          </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-[#E7E0D5]">
             <button
-              type="submit"
-              className="px-6 py-2.5 rounded-full text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs cursor-pointer"
+              type="button"
+              onClick={() => { setEditingCert(null); setIsCreatingNew(false); }}
+              className="px-4 py-2 text-xs text-[#6B645C] hover:text-[#201D1A] cursor-pointer"
             >
-              Save Certificate
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 rounded-xl text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs cursor-pointer"
+            >
+              {editingCert ? 'Update Credential' : 'Publish Credential'}
             </button>
           </div>
         </form>
       )}
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Grid of Certifications */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {data.certifications.map((cert) => (
           <div
             key={cert.id}
-            className="p-5 rounded-2xl bg-white border border-[#E7E0D5] flex items-center justify-between gap-4 shadow-2xs"
+            className="p-6 rounded-3xl bg-white border border-[#E7E0D5] flex flex-col justify-between space-y-4 shadow-2xs hover:border-[#C4A482] transition-colors"
           >
-            <div className="flex items-center gap-3">
-              {cert.imageUrl && (
-                <div className="w-14 h-10 rounded-lg overflow-hidden bg-[#FAF8F5] border border-[#E2D9CC] flex-shrink-0">
-                  <img src={cert.imageUrl} alt={cert.title} className="w-full h-full object-cover" />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono-code text-[#9C948A]">
+                <span className="text-[#9A7B61] font-medium">{cert.issuer}</span>
+                <span>{cert.issueDate}</span>
+              </div>
+              <h3 className="text-base font-serif text-[#201D1A] font-medium leading-snug">
+                {cert.title}
+              </h3>
+              {cert.credentialId && (
+                <div className="text-xs font-mono-code text-[#7C5E47]">
+                  ID: {cert.credentialId}
                 </div>
               )}
-              <div>
-                <h4 className="text-sm font-serif text-[#201D1A] font-medium">{cert.title}</h4>
-                <div className="text-xs text-[#6B645C]">{cert.issuer} • {cert.issueDate}</div>
-              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleStartEdit(cert)}
-                className="p-1.5 rounded-lg text-[#7C5E47] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                title="Edit"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => deleteCertification(cert.id)}
-                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
-                title="Delete"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+            <div className="pt-4 border-t border-[#E7E0D5] flex items-center justify-between">
+              {cert.verificationLink ? (
+                <a
+                  href={cert.verificationLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-[#6B645C] hover:text-[#201D1A]"
+                >
+                  <span>Link</span>
+                  <ExternalLink className="w-3 h-3 text-[#9A7B61]" />
+                </a>
+              ) : (
+                <span className="text-xs font-mono-code text-[#BDB5AB]">No URL</span>
+              )}
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleStartEdit(cert)}
+                  className="p-2 rounded-xl bg-[#FAF8F5] hover:bg-[#F4EFE6] text-[#6B645C] hover:text-[#201D1A] border border-[#E2D9CC] transition-colors cursor-pointer"
+                  title="Edit"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => deleteCertification(cert.id)}
+                  className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -210,4 +237,3 @@ export const CertificationsStudio: React.FC = () => {
     </div>
   );
 };
-

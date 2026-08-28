@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
-import { Save, Check, Layout, Move, Sparkles } from 'lucide-react';
-import { UniversalImageUploader } from './UniversalImageUploader';
+import { Save, Check, Layout, Move, Sparkles, Cpu, CheckCircle2 } from 'lucide-react';
 
 export const HeroStudio: React.FC = () => {
   const { data, updateHero } = usePortfolio();
@@ -22,10 +21,10 @@ export const HeroStudio: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E7E0D5]">
         <div>
           <div className="text-xs font-mono-code text-[#9A7B61] uppercase tracking-wider mb-1">
-            01 / HERO STATEMENT & IMAGE STUDIO
+            01 / HERO STATEMENT & VISUAL STUDIO
           </div>
           <h2 className="text-2xl sm:text-3xl font-serif text-[#201D1A] font-normal">
-            Hero Statement & Featured Image
+            Hero Statement & Visual Layout
           </h2>
         </div>
 
@@ -34,73 +33,58 @@ export const HeroStudio: React.FC = () => {
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-medium text-white bg-[#201D1A] hover:bg-[#34302C] shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
         >
           {savedSuccess ? <Check className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4 text-[#C4A482]" />}
-          <span>{savedSuccess ? 'Hero Updated!' : 'Save Statement & Image'}</span>
+          <span>{savedSuccess ? 'Hero Updated!' : 'Save Statement & Layout'}</span>
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-white border border-[#E7E0D5] space-y-8 shadow-2xs">
         
-        {/* 1. Hero Image Customization Section */}
+        {/* 1. Hero Visual Engine Notice & Placement Controls */}
         <div className="space-y-5 pb-6 border-b border-[#E7E0D5]">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-serif text-[#201D1A] font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#9A7B61]" />
-              <span>Hero Portrait / Feature Graphic</span>
+              <Cpu className="w-4 h-4 text-[#9A7B61]" />
+              <span>Generative Abstract Data & Signal Visual</span>
             </h3>
             
-            <label className="flex items-center gap-2 text-xs font-mono-code text-[#6B645C] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.showHeroImage !== false}
-                onChange={(e) => setFormData({ ...formData, showHeroImage: e.target.checked })}
-                className="rounded border-[#E2D9CC] text-[#9A7B61] focus:ring-[#9A7B61]"
-              />
-              <span>Display Image in Hero</span>
-            </label>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-mono-code">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Bundled Vector & CSS Engine</span>
+            </div>
           </div>
 
-          <UniversalImageUploader
-            label="Hero Featured Image / Portrait"
-            value={formData.heroImage || ''}
-            onChange={(url) => setFormData({ ...formData, heroImage: url })}
-            sectionName="Hero Section"
-            helperText="Drag & drop from your device, paste a Google Drive link, select from library, or paste any image URL."
-          />
+          <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EAE4DB] space-y-2">
+            <p className="text-xs text-[#524B43] leading-relaxed">
+              The hero section is rendered with an abstract statistical signal and telemetry card engineered with responsive CSS/SVG. It requires zero cloud storage uploads and is always guaranteed to load reliably in production.
+            </p>
+          </div>
 
-          {/* Placement and Shape Controls */}
+          {/* Placement Controls */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
             <div className="space-y-1.5">
               <label className="text-xs font-mono-code text-[#7A7268] flex items-center gap-1.5">
                 <Move className="w-3.5 h-3.5 text-[#9A7B61]" />
-                <span>IMAGE PLACEMENT / POSITION</span>
+                <span>VISUAL PLACEMENT / POSITION</span>
               </label>
               <select
                 value={formData.heroImagePlacement || 'side-right'}
                 onChange={(e) => setFormData({ ...formData, heroImagePlacement: e.target.value as any })}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E2D9CC] text-xs text-[#201D1A] focus:border-[#201D1A] focus:outline-none"
               >
-                <option value="side-right">Editorial Split (Image on Right, Text on Left)</option>
-                <option value="center-top">Top Centered (Portrait above Headline)</option>
-                <option value="center-bottom">Bottom Centered (Feature Banner below CTA)</option>
-                <option value="badge-corner">Corner Floating Badge (Upper Right Ambient)</option>
+                <option value="side-right">Editorial Split (Visual on Right, Text on Left)</option>
+                <option value="center-top">Top Centered (Visual above Headline)</option>
+                <option value="center-bottom">Bottom Centered (Visual below CTA)</option>
               </select>
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-mono-code text-[#7A7268] flex items-center gap-1.5">
                 <Layout className="w-3.5 h-3.5 text-[#9A7B61]" />
-                <span>IMAGE FRAME STYLING</span>
+                <span>VISUAL AESTHETIC THEME</span>
               </label>
-              <select
-                value={formData.heroImageShape || 'archival'}
-                onChange={(e) => setFormData({ ...formData, heroImageShape: e.target.value as any })}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E2D9CC] text-xs text-[#201D1A] focus:border-[#201D1A] focus:outline-none"
-              >
-                <option value="archival">Tactile Archival (Layered backing paper with stamp)</option>
-                <option value="circle">Circular Avatar (Editorial ring border)</option>
-                <option value="rounded">Modern Rounded (Soft curvature border)</option>
-                <option value="pill">Pill / Stadium Contour</option>
-              </select>
+              <div className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E2D9CC] text-xs text-[#6B645C]">
+                Tactile Archival Matrix (Live Vector Telemetry)
+              </div>
             </div>
           </div>
         </div>
@@ -154,4 +138,3 @@ export const HeroStudio: React.FC = () => {
     </div>
   );
 };
-

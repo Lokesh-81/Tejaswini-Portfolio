@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, LineChart, Line } from 'recharts';
-import { Activity, Radio, Sliders, Sparkles, Database, Layers, Eye, RefreshCw, BarChart3, TrendingUp, Cpu } from 'lucide-react';
+import { Activity, Radio, Sliders, Database, Layers, Eye, RefreshCw, BarChart3, TrendingUp, Cpu } from 'lucide-react';
 
 const netflixCatalogData = [
   { genre: 'Dramas', count: 3180, share: '36.1%', productionIndex: 94 },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
-import { FileText, ArrowUpRight, Menu, X, SlidersHorizontal, Radio, Sparkles } from 'lucide-react';
+import { FileText, ArrowUpRight, Menu, X, SlidersHorizontal } from 'lucide-react';
 
 interface NavbarProps {
   onOpenAdmin: () => void;

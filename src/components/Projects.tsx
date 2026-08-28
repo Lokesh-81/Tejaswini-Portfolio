@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
 import { ProjectItem } from '../types';
-import { ArrowUpRight, Github, FolderGit2, Sparkles, Database, HelpCircle, Lightbulb, Wrench, Search, Eye, FileText, Layers } from 'lucide-react';
+import { ArrowUpRight, Github, Database, HelpCircle, Lightbulb, Wrench, Search, Eye, FileText, Layers } from 'lucide-react';
 import { TiltCard3D } from './TiltCard3D';
+import { ProjectVisualCard } from './ProjectVisualCard';
 
 interface InvestigationMeta {
   caseId: string;
@@ -74,8 +75,8 @@ export const Projects: React.FC = () => {
             </h2>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-[#FAF8F5] p-1.5 rounded-full border border-[#E2D9CC] shadow-2xs">
+          {/* Categorical Filtering Tabs */}
+          <div className="flex flex-wrap gap-2 p-1.5 rounded-full bg-[#F4EFE6] border border-[#E7E0D5]">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -137,25 +138,20 @@ export const Projects: React.FC = () => {
                   {/* Main Asymmetric Grid */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                     
-                    {/* Dominant Editorial Image Canvas with 3D Pop */}
+                    {/* Visual Analytics Card with 3D Pop */}
                     <div className={`lg:col-span-6 relative ${isAlternate ? 'lg:order-2' : 'lg:order-1'}`} style={{ transform: 'translateZ(30px)' }}>
                       <div
                         onClick={() => setSelectedProjectModal(project)}
-                        className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-[#F0EBE1] border border-[#E2D9CC] group-hover:border-[#C4A482] transition-all cursor-pointer shadow-sm group-hover:shadow-md"
+                        className="relative rounded-2xl overflow-hidden cursor-pointer group-hover:scale-[1.01] transition-transform duration-500"
                       >
-                        <img
-                          src={project.heroImage}
-                          alt={project.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-104 filter contrast-[1.02]"
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
+                        <ProjectVisualCard
+                          projectId={project.id}
+                          title={project.title}
+                          category={project.category}
                         />
-                        
-                        {/* Gentle Vignette */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#201D1A]/50 via-transparent to-transparent opacity-75" />
 
                         {/* Interactive Inspect Hover Banner */}
-                        <div className="absolute inset-0 bg-[#201D1A]/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-[#201D1A]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-2xl">
                           <span className="px-5 py-2.5 rounded-full bg-white text-[#201D1A] text-xs font-medium shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2">
                             <Eye className="w-3.5 h-3.5 text-[#9A7B61]" />
                             <span>Open Research Dossier</span>

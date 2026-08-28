@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
-import { Compass, Briefcase, MapPin, Award, ArrowRight, Radio, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Compass, Briefcase, MapPin, Award, ArrowRight, Radio, CheckCircle2, ChevronRight } from 'lucide-react';
 
 interface MilestoneData {
   id: string;

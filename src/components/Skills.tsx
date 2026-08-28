@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
-import { Feather, ArrowUpRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Feather, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 
 interface SkillGroup {
   category: string;
