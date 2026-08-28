@@ -238,8 +238,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 </div>
 
                 {resetSuccessMessage && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-mono-code text-left leading-relaxed">
-                    ✓ {resetSuccessMessage}
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-mono-code text-left leading-relaxed space-y-2">
+                    <p className="font-semibold text-emerald-900">✓ {resetSuccessMessage}</p>
+                    <p className="text-[11px] text-emerald-700">
+                      Note: If the email does not arrive, verify that the <strong>Email/Password</strong> provider is enabled in the Firebase Console (Authentication &rarr; Sign-in method) for project <code>gen-lang-client-0464688082</code>.
+                    </p>
                   </div>
                 )}
 

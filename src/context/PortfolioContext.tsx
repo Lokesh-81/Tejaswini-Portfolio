@@ -768,6 +768,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         errorMsg = 'Too many failed login attempts. Please wait a moment before trying again.';
       } else if (err?.code === 'auth/invalid-email') {
         errorMsg = 'Please enter a valid email address.';
+      } else if (err?.code === 'auth/operation-not-allowed') {
+        errorMsg = 'Email/Password sign-in provider is disabled in Firebase Authentication. Please enable Email/Password provider in the Firebase Console.';
       }
 
       setAuthError(errorMsg);
