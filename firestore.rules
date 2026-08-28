@@ -8,15 +8,25 @@ service cloud.firestore {
     }
 
     // Check if the authenticated user is an authorized administrator
-    // Supports Firebase Auth custom claims (admin: true / role: 'admin')
-    // OR verified admin record lookup in /admins or /admin_users collections
+    // Supports:
+    // 1. Firebase Auth custom claims (admin: true / role: 'admin')
+    // 2. Direct verified administrator email (poosala15@gmail.com, etc.)
+    // 3. Document lookup in /admins/{uid}
+    // 4. Document lookup in /admin_users/{uid} with role == 'Admin' or 'Editor'
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.admin == true ||
         request.auth.token.role == 'admin' ||
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'poosala15@gmail.com' ||
+          request.auth.token.email.lower() == 'tejaswinitejp@gmail.com' ||
+          request.auth.token.email.lower() == 'tejaswiniteja793@gmail.com' ||
+          request.auth.token.email.lower() == 'admin@tejaswini.ai'
+        )) ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         (exists(/databases/$(database)/documents/admin_users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'Admin')
+         (get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'Admin' ||
+          get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'Editor'))
       );
     }
 
@@ -60,14 +70,23 @@ service cloud.firestore {
 
     // Admin users collection
     // Regular users CANNOT read or write, preventing privilege escalation
-    // Only verified administrators can view and manage admin users
+    // Only verified administrators or self-managed verified admin accounts can read/write
     match /admin_users/{userId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow write: if isAdmin() || (isSignedIn() && request.auth.uid == userId && (
+        request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'poosala15@gmail.com' ||
+          request.auth.token.email.lower() == 'tejaswinitejp@gmail.com' ||
+          request.auth.token.email.lower() == 'tejaswiniteja793@gmail.com' ||
+          request.auth.token.email.lower() == 'admin@tejaswini.ai'
+        )
+      ));
     }
 
     // Admins lookup collection
     match /admins/{userId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow write: if isAdmin();
     }
   }
 }

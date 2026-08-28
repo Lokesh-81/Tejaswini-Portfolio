@@ -137,6 +137,20 @@ interface PortfolioContextType {
 
 const PortfolioContext = createContext<PortfolioContextType | undefined>(undefined);
 
+// Check if email is an authorized administrator email
+const isAuthorizedAdminEmail = (emailToCheck: string | null | undefined): boolean => {
+  if (!emailToCheck) return false;
+  const emailLower = emailToCheck.trim().toLowerCase();
+  const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').trim().toLowerCase();
+  return (
+    emailLower === 'poosala15@gmail.com' ||
+    (configuredAdminEmail !== '' && emailLower === configuredAdminEmail) ||
+    emailLower === 'tejaswinitejp@gmail.com' ||
+    emailLower === 'tejaswiniteja793@gmail.com' ||
+    emailLower === 'admin@tejaswini.ai'
+  );
+};
+
 export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<PortfolioData>(() => {
     try {
@@ -189,43 +203,50 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             return;
           }
 
-          // 2. Check if user exists in Firestore /admins or /admin_users collection
-          const adminDoc = await getDoc(doc(db, 'admin_users', user.uid));
-          if (adminDoc.exists()) {
-            const role = adminDoc.data()?.role;
-            if (role === 'Admin' || role === 'Editor' || role === 'Viewer') {
-              setCurrentUserRole(role);
-              setIsAuthLoading(false);
-              return;
-            }
+          // 2. Check if primary administrator / owner account (poosala15@gmail.com, VITE_ADMIN_EMAIL, etc.)
+          const emailLower = (user.email || '').toLowerCase();
+          if (isAuthorizedAdminEmail(emailLower)) {
+            setCurrentUserRole('Admin');
+            // Ensure Firestore admin_users document exists for security rule validation
+            try {
+              const adminRef = doc(db, 'admin_users', user.uid);
+              setDoc(adminRef, {
+                uid: user.uid,
+                email: user.email,
+                role: 'Admin',
+                lastLogin: new Date().toISOString()
+              }, { merge: true }).catch(() => {});
+            } catch {}
+            setIsAuthLoading(false);
+            return;
           }
 
-          // 3. Check collaborators in portfolio state
-          const emailLower = (user.email || '').toLowerCase();
+          // 3. Check if user exists in Firestore /admin_users or /admins collection
+          try {
+            const adminDoc = await getDoc(doc(db, 'admin_users', user.uid));
+            if (adminDoc.exists()) {
+              const role = adminDoc.data()?.role;
+              if (role === 'Admin' || role === 'Editor' || role === 'Viewer') {
+                setCurrentUserRole(role);
+                setIsAuthLoading(false);
+                return;
+              }
+            }
+          } catch {}
+
+          // 4. Check collaborators in portfolio state
           const matchedRole = (data.userRoles || []).find(
             (r) => r.email.toLowerCase() === emailLower
           );
           if (matchedRole) {
             setCurrentUserRole(matchedRole.role);
           } else {
-            // Check if primary portfolio owner account (via env VITE_ADMIN_EMAIL or default owner addresses)
-            const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').toLowerCase();
-            const isOwnerAccount = 
-              (configuredAdminEmail && emailLower === configuredAdminEmail) ||
-              emailLower === 'tejaswinitejp@gmail.com' ||
-              emailLower === 'tejaswiniteja793@gmail.com' ||
-              emailLower === 'admin@tejaswini.ai';
-            setCurrentUserRole(isOwnerAccount ? 'Admin' : null);
+            setCurrentUserRole(null);
           }
         } catch (err) {
           console.warn('Authorization role resolution note:', err);
           const emailLower = (user.email || '').toLowerCase();
-          const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').toLowerCase();
-          const isOwnerAccount = 
-            (configuredAdminEmail && emailLower === configuredAdminEmail) ||
-            emailLower === 'tejaswinitejp@gmail.com' ||
-            emailLower === 'tejaswiniteja793@gmail.com' ||
-            emailLower === 'admin@tejaswini.ai';
+          const isOwnerAccount = isAuthorizedAdminEmail(emailLower);
           setCurrentUserRole(isOwnerAccount ? 'Admin' : null);
         }
       } else {
@@ -688,29 +709,29 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (userCred.user) {
         // Resolve role authorization
         let isAuthorized = false;
+        let resolvedRole: 'Admin' | 'Editor' | 'Viewer' = 'Admin';
+
         try {
           const tokenResult = await getIdTokenResult(userCred.user);
           if (tokenResult.claims.admin === true || tokenResult.claims.role === 'admin') {
             isAuthorized = true;
-            setCurrentUserRole('Admin');
+            resolvedRole = 'Admin';
           }
         } catch {}
 
+        const emailLower = (userCred.user.email || '').toLowerCase();
+        if (!isAuthorized && isAuthorizedAdminEmail(emailLower)) {
+          isAuthorized = true;
+          resolvedRole = 'Admin';
+        }
+
         if (!isAuthorized) {
-          const emailLower = (userCred.user.email || '').toLowerCase();
-          const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').toLowerCase();
-          const isOwner = 
-            (configuredAdminEmail && emailLower === configuredAdminEmail) ||
-            emailLower === 'tejaswinitejp@gmail.com' ||
-            emailLower === 'tejaswiniteja793@gmail.com' ||
-            emailLower === 'admin@tejaswini.ai';
-          const isCollaborator = (data.userRoles || []).some(
+          const matchedRole = (data.userRoles || []).find(
             r => r.email.toLowerCase() === emailLower && (r.role === 'Admin' || r.role === 'Editor')
           );
-
-          if (isOwner || isCollaborator) {
+          if (matchedRole) {
             isAuthorized = true;
-            if (isOwner) setCurrentUserRole('Admin');
+            resolvedRole = matchedRole.role;
           }
         }
 
@@ -720,7 +741,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const adminDoc = await getDoc(doc(db, 'admin_users', userCred.user.uid));
             if (adminDoc.exists() && (adminDoc.data()?.role === 'Admin' || adminDoc.data()?.role === 'Editor')) {
               isAuthorized = true;
-              setCurrentUserRole(adminDoc.data()?.role);
+              resolvedRole = adminDoc.data()?.role as 'Admin' | 'Editor';
             }
           } catch {}
         }
@@ -735,6 +756,23 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
 
         setCurrentUser(userCred.user);
+        setCurrentUserRole(resolvedRole);
+
+        // Ensure Firestore /admin_users/{uid} document is synchronized for rule compatibility
+        if (resolvedRole === 'Admin') {
+          try {
+            const adminRef = doc(db, 'admin_users', userCred.user.uid);
+            await setDoc(adminRef, {
+              uid: userCred.user.uid,
+              email: userCred.user.email,
+              role: 'Admin',
+              lastLogin: new Date().toISOString()
+            }, { merge: true });
+          } catch (docErr) {
+            console.warn('Admin record sync notice:', docErr);
+          }
+        }
+
         return { success: true };
       }
       return { success: false, error: 'Authentication failed.' };
@@ -745,9 +783,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // If user not found and it's the verified portfolio owner, offer account registration in Firebase Auth
       if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
         const isOwnerEmail = 
-          email.toLowerCase() === 'tejaswinitejp@gmail.com' ||
-          email.toLowerCase() === 'tejaswiniteja793@gmail.com' ||
-          email.toLowerCase() === 'admin@tejaswini.ai' ||
+          isAuthorizedAdminEmail(email) ||
           (data.userRoles || []).some(r => r.email.toLowerCase() === email.toLowerCase());
 
         if (isOwnerEmail) {

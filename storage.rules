@@ -7,11 +7,17 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Check if the authenticated user has verified administrator authorization via custom claims
+    // Check if the authenticated user has verified administrator authorization
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.admin == true ||
-        request.auth.token.role == 'admin'
+        request.auth.token.role == 'admin' ||
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'poosala15@gmail.com' ||
+          request.auth.token.email.lower() == 'tejaswinitejp@gmail.com' ||
+          request.auth.token.email.lower() == 'tejaswiniteja793@gmail.com' ||
+          request.auth.token.email.lower() == 'admin@tejaswini.ai'
+        ))
       );
     }
 

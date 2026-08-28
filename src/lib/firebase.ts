@@ -15,7 +15,7 @@ import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc } 
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import bundledFirebaseConfig from '../../firebase-applet-config.json';
 
-// Support customizable environment variables for migration to a new Firebase project
+// Support customizable environment variables for migration to a new Firebase project or Vercel deployment
 const envFirebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -23,9 +23,10 @@ const envFirebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID,
 };
 
-// Use environment variables if VITE_FIREBASE_PROJECT_ID is provided, otherwise fallback to bundled config
+// Use environment variables if provided, otherwise fallback to bundled config
 const activeFirebaseConfig: {
   apiKey: string;
   authDomain: string;
@@ -34,17 +35,15 @@ const activeFirebaseConfig: {
   messagingSenderId: string;
   appId: string;
   firestoreDatabaseId?: string;
-} = envFirebaseConfig.projectId
-  ? {
-      apiKey: envFirebaseConfig.apiKey || bundledFirebaseConfig.apiKey,
-      authDomain: envFirebaseConfig.authDomain || `${envFirebaseConfig.projectId}.firebaseapp.com`,
-      projectId: envFirebaseConfig.projectId,
-      storageBucket: envFirebaseConfig.storageBucket || `${envFirebaseConfig.projectId}.firebasestorage.app`,
-      messagingSenderId: envFirebaseConfig.messagingSenderId || bundledFirebaseConfig.messagingSenderId,
-      appId: envFirebaseConfig.appId || bundledFirebaseConfig.appId,
-      firestoreDatabaseId: (import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID as string) || undefined,
-    }
-  : bundledFirebaseConfig;
+} = {
+  apiKey: envFirebaseConfig.apiKey || bundledFirebaseConfig.apiKey,
+  authDomain: envFirebaseConfig.authDomain || bundledFirebaseConfig.authDomain || `${bundledFirebaseConfig.projectId}.firebaseapp.com`,
+  projectId: envFirebaseConfig.projectId || bundledFirebaseConfig.projectId,
+  storageBucket: envFirebaseConfig.storageBucket || bundledFirebaseConfig.storageBucket || `${bundledFirebaseConfig.projectId}.firebasestorage.app`,
+  messagingSenderId: envFirebaseConfig.messagingSenderId || bundledFirebaseConfig.messagingSenderId,
+  appId: envFirebaseConfig.appId || bundledFirebaseConfig.appId,
+  firestoreDatabaseId: envFirebaseConfig.firestoreDatabaseId || (bundledFirebaseConfig as any).firestoreDatabaseId || undefined,
+};
 
 const isNewApp = !getApps().length;
 const app = isNewApp ? initializeApp(activeFirebaseConfig) : getApp();

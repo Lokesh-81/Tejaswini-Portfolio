@@ -31,8 +31,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   // Auth view mode: 'login' | 'forgot_password'
   const [authMode, setAuthMode] = useState<'login' | 'forgot_password'>('login');
   
-  // Login & Reset form state (default to configured VITE_ADMIN_EMAIL or blank)
-  const defaultAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string) || '';
+  // Login & Reset form state (default to configured VITE_ADMIN_EMAIL or poosala15@gmail.com)
+  const defaultAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string) || 'poosala15@gmail.com';
   const [emailInput, setEmailInput] = useState<string>(defaultAdminEmail);
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);

@@ -407,6 +407,12 @@ export const initialPortfolioData: PortfolioData = {
   },
   userRoles: [
     {
+      id: 'role-admin-primary',
+      name: 'Primary Administrator',
+      email: 'poosala15@gmail.com',
+      role: 'Admin'
+    },
+    {
       id: 'role-1',
       name: 'Tejaswini Pamula',
       email: 'tejaswinitejp@gmail.com',
