@@ -31,8 +31,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   // Auth view mode: 'login' | 'forgot_password'
   const [authMode, setAuthMode] = useState<'login' | 'forgot_password'>('login');
   
-  // Login & Reset form state
-  const [emailInput, setEmailInput] = useState<string>('tejaswinitejp@gmail.com');
+  // Login & Reset form state (default to configured VITE_ADMIN_EMAIL or blank)
+  const defaultAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string) || '';
+  const [emailInput, setEmailInput] = useState<string>(defaultAdminEmail);
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -121,7 +122,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   <input
                     type="email"
                     required
-                    placeholder="tejaswinitejp@gmail.com"
+                    placeholder="admin@yourdomain.com"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-white border border-[#E2D9CC] text-sm text-[#201D1A] focus:border-[#201D1A] focus:outline-none placeholder-[#9C948A]"
@@ -230,7 +231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   <input
                     type="email"
                     required
-                    placeholder="tejaswinitejp@gmail.com"
+                    placeholder="admin@yourdomain.com"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-white border border-[#E2D9CC] text-sm text-[#201D1A] focus:border-[#201D1A] focus:outline-none placeholder-[#9C948A]"
@@ -241,7 +242,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-mono-code text-left leading-relaxed space-y-2">
                     <p className="font-semibold text-emerald-900">✓ {resetSuccessMessage}</p>
                     <p className="text-[11px] text-emerald-700">
-                      Note: If the email does not arrive, verify that the <strong>Email/Password</strong> provider is enabled in the Firebase Console (Authentication &rarr; Sign-in method) for project <code>gen-lang-client-0464688082</code>.
+                      Note: Verify that the <strong>Email/Password</strong> provider is enabled in your active Firebase Console (Authentication &rarr; Sign-in method).
                     </p>
                   </div>
                 )}

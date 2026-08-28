@@ -208,8 +208,10 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (matchedRole) {
             setCurrentUserRole(matchedRole.role);
           } else {
-            // Check if primary portfolio owner account
+            // Check if primary portfolio owner account (via env VITE_ADMIN_EMAIL or default owner addresses)
+            const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').toLowerCase();
             const isOwnerAccount = 
+              (configuredAdminEmail && emailLower === configuredAdminEmail) ||
               emailLower === 'tejaswinitejp@gmail.com' ||
               emailLower === 'tejaswiniteja793@gmail.com' ||
               emailLower === 'admin@tejaswini.ai';
@@ -218,7 +220,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } catch (err) {
           console.warn('Authorization role resolution note:', err);
           const emailLower = (user.email || '').toLowerCase();
+          const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').toLowerCase();
           const isOwnerAccount = 
+            (configuredAdminEmail && emailLower === configuredAdminEmail) ||
             emailLower === 'tejaswinitejp@gmail.com' ||
             emailLower === 'tejaswiniteja793@gmail.com' ||
             emailLower === 'admin@tejaswini.ai';
@@ -694,7 +698,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         if (!isAuthorized) {
           const emailLower = (userCred.user.email || '').toLowerCase();
+          const configuredAdminEmail = (import.meta.env.VITE_ADMIN_EMAIL as string || '').toLowerCase();
           const isOwner = 
+            (configuredAdminEmail && emailLower === configuredAdminEmail) ||
             emailLower === 'tejaswinitejp@gmail.com' ||
             emailLower === 'tejaswiniteja793@gmail.com' ||
             emailLower === 'admin@tejaswini.ai';
