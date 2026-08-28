@@ -30,6 +30,7 @@ import {
   fbSignOut,
   onAuthStateChanged,
   fbUpdatePassword,
+  sendPasswordResetEmail,
   getIdTokenResult,
   User
 } from '../lib/firebase';
@@ -103,6 +104,7 @@ interface PortfolioContextType {
   // Auth & Roles
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   changeAdminPassword: (oldPassword?: string, newPassword?: string) => Promise<boolean>;
   updateAdminPassword: (newPassword: string) => Promise<boolean>;
   addUserRole: (emailOrRole: string | Omit<UserRole, 'id'>, optionalRole?: 'Admin' | 'Editor' | 'Viewer') => Promise<boolean>;
@@ -784,6 +786,26 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setAuthError(null);
   };
 
+  // Send password reset email via Firebase Auth
+  const sendPasswordReset = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    if (!email || !email.trim()) {
+      return { success: false, error: 'Please enter your administrator email address.' };
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      return { success: true };
+    } catch (err: any) {
+      console.error('Password reset email error:', err);
+      let errorMsg = 'Unable to send password reset email. Please verify the email address.';
+      if (err?.code === 'auth/user-not-found') {
+        errorMsg = 'No administrator account found with this email.';
+      } else if (err?.code === 'auth/invalid-email') {
+        errorMsg = 'Invalid email address format.';
+      }
+      return { success: false, error: errorMsg };
+    }
+  };
+
   // Change password for currently authenticated user via Firebase Auth
   const changeAdminPassword = async (oldPassword?: string, newPassword?: string): Promise<boolean> => {
     if (!newPassword || !auth.currentUser) return false;
@@ -1005,6 +1027,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         exportMessagesCSV,
         login,
         logout,
+        sendPasswordReset,
         changeAdminPassword,
         updateAdminPassword,
         addUserRole,

@@ -22,7 +22,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
-  const { currentUser, isAdminLoggedIn, isAuthenticated, currentUserRole, isAuthLoading, login, authError: contextAuthError } = usePortfolio();
+  const { currentUser, isAdminLoggedIn, isAuthenticated, currentUserRole, isAuthLoading, login, sendPasswordReset, authError: contextAuthError } = usePortfolio();
   const isAuth = !!currentUser && isAdminLoggedIn;
 
   const [currentTab, setCurrentTab] = useState<string>('home');
@@ -33,11 +33,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSendingReset, setIsSendingReset] = useState<boolean>(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
   const [localAuthError, setLocalAuthError] = useState<string | null>(null);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalAuthError(null);
+    setResetSuccessMessage(null);
     setIsSubmitting(true);
     try {
       const res = await login(emailInput.trim(), passwordInput.trim());
@@ -48,6 +51,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       setLocalAuthError(err?.message || 'Authentication error.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setLocalAuthError(null);
+    setResetSuccessMessage(null);
+    if (!emailInput || !emailInput.trim()) {
+      setLocalAuthError('Please enter your administrator email address to receive a password reset link.');
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const res = await sendPasswordReset(emailInput.trim());
+      if (res.success) {
+        setResetSuccessMessage(`Password reset link sent to ${emailInput.trim()}. Please check your inbox (and spam folder) to set your new password.`);
+      } else {
+        setLocalAuthError(res.error || 'Unable to dispatch password reset email.');
+      }
+    } catch (err: any) {
+      setLocalAuthError(err?.message || 'Failed to send password reset email.');
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -99,6 +124,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   <KeyRound className="w-3.5 h-3.5 text-[#9A7B61]" />
                   <span>PASSWORD</span>
                 </label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isSendingReset}
+                  className="text-xs font-mono-code text-[#9A7B61] hover:text-[#201D1A] hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  {isSendingReset ? 'Sending link...' : 'Forgot password?'}
+                </button>
               </div>
               <div className="relative">
                 <input
@@ -119,8 +152,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </div>
             </div>
 
+            {resetSuccessMessage && (
+              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-mono-code text-left leading-relaxed">
+                ✓ {resetSuccessMessage}
+              </div>
+            )}
+
             {(localAuthError || contextAuthError) && (
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-mono-code">
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-mono-code text-left">
                 {localAuthError || contextAuthError}
               </div>
             )}

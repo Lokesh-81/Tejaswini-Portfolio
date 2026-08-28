@@ -7,6 +7,7 @@ import {
   signOut as fbSignOut, 
   onAuthStateChanged,
   updatePassword as fbUpdatePassword,
+  sendPasswordResetEmail,
   getIdTokenResult,
   User 
 } from 'firebase/auth';
@@ -44,6 +45,7 @@ export {
   fbSignOut,
   onAuthStateChanged,
   fbUpdatePassword,
+  sendPasswordResetEmail,
   getIdTokenResult,
   doc,
   getDoc,
