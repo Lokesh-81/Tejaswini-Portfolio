@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if the request is from an authenticated user
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated user is an authorized administrator
+    // Supports Firebase Auth custom claims (admin: true / role: 'admin')
+    // OR verified admin record lookup in /admins or /admin_users collections
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/admin_users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'Admin')
+      );
+    }
+
+    // Default deny catch-all for unmatched documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Public portfolio master document
+    // Public visitors can read portfolio data, but cannot create, update, or delete
+    // Only verified administrators can modify portfolio data
+    match /portfolio/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Contact messages collection
+    // Visitors can submit contact messages without authentication, with type & size validation
+    // Visitors CANNOT read, update, or delete messages
+    // Only verified administrators can read, update, or delete messages
+    match /messages/{messageId} {
+      allow create: if request.resource.data.name is string &&
+                      request.resource.data.name.size() > 0 &&
+                      request.resource.data.name.size() <= 200 &&
+                      request.resource.data.email is string &&
+                      request.resource.data.email.size() > 0 &&
+                      request.resource.data.email.size() <= 200 &&
+                      request.resource.data.message is string &&
+                      request.resource.data.message.size() > 0 &&
+                      request.resource.data.message.size() <= 5000;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Media library assets
+    // Public visitors can read media metadata
+    // Only verified administrators can create, update, or delete media items
+    match /media/{mediaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Admin users collection
+    // Regular users CANNOT read or write, preventing privilege escalation
+    // Only verified administrators can view and manage admin users
+    match /admin_users/{userId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Admins lookup collection
+    match /admins/{userId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Portfolio": {
+      "fields": {
+        "personalInfo": { "type": "map" },
+        "hero": { "type": "map" },
+        "education": { "type": "array" },
+        "experience": { "type": "array" },
+        "projects": { "type": "array" },
+        "skillCategories": { "type": "array" },
+        "certifications": { "type": "array" },
+        "achievements": { "type": "array" },
+        "seoSettings": { "type": "map" },
+        "userRoles": { "type": "array" }
+      }
+    },
+    "ContactMessage": {
+      "fields": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isRead": { "type": "boolean" }
+      }
+    },
+    "MediaItem": {
+      "fields": {
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "type": { "type": "string" },
+        "size": { "type": "string" },
+        "uploadedAt": { "type": "string" },
+        "usedInSection": { "type": "string" },
+        "altText": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    }
+  }
+}

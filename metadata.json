@@ -1,0 +1,6 @@
+{
+  "name": "Tejaswini Pamula - Portfolio & Admin CMS Studio",
+  "description": "Production-grade portfolio CMS and management dashboard for Tejaswini Pamula with real-time editorial content controls, media asset hub, interactive case studies, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
