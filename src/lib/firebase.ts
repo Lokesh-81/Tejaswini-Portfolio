@@ -56,7 +56,9 @@ export const db = activeFirebaseConfig.firestoreDatabaseId
 
 export const storage = getStorage(app);
 
+export const activeFirebaseConfigPublic = activeFirebaseConfig;
 export const currentFirebaseProjectId = activeFirebaseConfig.projectId;
+export const currentFirebaseStorageBucket = activeFirebaseConfig.storageBucket;
 
 export async function testFirestoreConnection() {
   return true;

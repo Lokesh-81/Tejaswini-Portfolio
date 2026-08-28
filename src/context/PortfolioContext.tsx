@@ -33,7 +33,9 @@ import {
   fbUpdatePassword,
   sendPasswordResetEmail,
   getIdTokenResult,
-  User
+  User,
+  currentFirebaseProjectId,
+  currentFirebaseStorageBucket
 } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrors';
 
@@ -1039,7 +1041,19 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       finalUrl = await Promise.race([uploadPromise, timeoutPromise]);
     } catch (uploadErr: any) {
       console.error('Firebase Storage upload failed:', uploadErr);
-      const message = uploadErr?.message || 'Storage upload failed. Please verify administrator permissions and network connectivity.';
+      const code = uploadErr?.code || '';
+      let message = uploadErr?.message || 'Storage upload failed.';
+
+      if (code === 'storage/unknown' || message.includes('404') || message.includes('not found') || message.includes('specified bucket does not exist')) {
+        message = `Firebase Storage bucket "${currentFirebaseStorageBucket}" is not yet enabled or does not exist in project "${currentFirebaseProjectId}". To enable it: Open Firebase Console → Build → Storage → Click "Get started" (or add your production VITE_FIREBASE_STORAGE_BUCKET in Vercel environment variables).`;
+      } else if (code === 'storage/unauthorized' || code === 'storage/unauthenticated' || message.includes('permission')) {
+        message = 'Firebase Storage permission denied: Make sure you are logged in as an authorized administrator (poosala15@gmail.com) and storage.rules are deployed.';
+      } else if (code === 'storage/quota-exceeded' || message.includes('quota')) {
+        message = 'Firebase Storage quota exceeded for this project.';
+      } else if (code === 'storage/retry-limit-exceeded' || message.includes('timeout') || message.includes('timed out')) {
+        message = `Upload timed out. This occurs when the storage bucket "${currentFirebaseStorageBucket}" is unreachable or not created in Firebase Console.`;
+      }
+
       throw new Error(message);
     }
 
