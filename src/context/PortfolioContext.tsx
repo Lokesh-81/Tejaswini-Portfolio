@@ -787,20 +787,27 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Send password reset email via Firebase Auth
-  const sendPasswordReset = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    if (!email || !email.trim()) {
+  const sendPasswordReset = async (emailInput: string): Promise<{ success: boolean; error?: string }> => {
+    const email = emailInput ? emailInput.trim() : '';
+    if (!email) {
       return { success: false, error: 'Please enter your administrator email address.' };
     }
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      await sendPasswordResetEmail(auth, email);
       return { success: true };
     } catch (err: any) {
-      console.error('Password reset email error:', err);
+      console.warn('Password reset email error:', err?.code, err?.message);
       let errorMsg = 'Unable to send password reset email. Please verify the email address.';
       if (err?.code === 'auth/user-not-found') {
-        errorMsg = 'No administrator account found with this email.';
+        errorMsg = 'No administrator account found with this email address in Firebase Authentication.';
       } else if (err?.code === 'auth/invalid-email') {
-        errorMsg = 'Invalid email address format.';
+        errorMsg = 'Invalid email address format. Please enter a valid email.';
+      } else if (err?.code === 'auth/too-many-requests') {
+        errorMsg = 'Too many reset requests. Please wait a few moments and try again.';
+      } else if (err?.code === 'auth/network-request-failed') {
+        errorMsg = 'Network connection error. Please check your internet connection.';
+      } else if (err?.code === 'auth/configuration-not-found' || err?.code === 'auth/operation-not-allowed') {
+        errorMsg = 'Firebase Authentication password reset service is temporarily unavailable. Please verify Firebase project settings.';
       }
       return { success: false, error: errorMsg };
     }
