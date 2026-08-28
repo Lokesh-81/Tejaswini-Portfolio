@@ -10,7 +10,9 @@ import {
   Layers, 
   FolderSearch,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 interface UniversalImageUploaderProps {
@@ -33,11 +35,14 @@ export const UniversalImageUploader: React.FC<UniversalImageUploaderProps> = ({
   const { data, uploadFileToStorage } = usePortfolio();
   const [activeTab, setActiveTab] = useState<'upload' | 'gdrive' | 'url' | 'library'>('upload');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [gdriveInput, setGdriveInput] = useState('');
   const [directUrlInput, setDirectUrlInput] = useState(value || '');
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef<number>(0);
 
   // Convert Google Drive share link into direct embedding URL if necessary
   const convertGoogleDriveUrl = (url: string): string => {
@@ -61,23 +66,75 @@ export const UniversalImageUploader: React.FC<UniversalImageUploaderProps> = ({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (isUploading) return;
+
+    setUploadError(null);
     const file = files[0];
-    if (!file.type.startsWith('image/') && !file.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
-      alert('Please select a valid image file (PNG, JPG, WebP, SVG, GIF).');
+    const fileNameLower = file.name.toLowerCase();
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif'];
+    const hasValidExt = validExtensions.some(ext => fileNameLower.endsWith(ext));
+
+    if (!hasValidExt && !file.type.startsWith('image/')) {
+      setUploadError(`Invalid image format for "${file.name}". Please upload PNG, JPG, WebP, SVG, or GIF.`);
       return;
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+
     try {
-      const uploadedItem = await uploadFileToStorage(file, sectionName);
+      const uploadedItem = await uploadFileToStorage(
+        file, 
+        sectionName,
+        (percent) => setUploadProgress(percent)
+      );
       if (uploadedItem && uploadedItem.url) {
         onChange(uploadedItem.url);
         setDirectUrlInput(uploadedItem.url);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload failed:', err);
+      setUploadError(err?.message || 'Upload failed. Please check permissions and connection.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      setDragOver(false);
+      dragCounterRef.current = 0;
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    dragCounterRef.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
     }
   };
 
@@ -214,33 +271,69 @@ export const UniversalImageUploader: React.FC<UniversalImageUploaderProps> = ({
 
           {/* Tab 1: Drag & Drop from Device */}
           {activeTab === 'upload' && (
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOver(false);
-                handleFiles(e.dataTransfer.files);
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
-                dragOver
-                  ? 'border-[#9A7B61] bg-[#F4EFE6]'
-                  : 'border-[#D5C9B8] hover:border-[#9A7B61] bg-white'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFiles(e.target.files)}
-                className="hidden"
-              />
-              <div className="flex items-center justify-center gap-2 text-xs font-mono-code text-[#6B645C]">
-                <Upload className="w-3.5 h-3.5 text-[#9A7B61]" />
-                <span>{isUploading ? 'Uploading & saving...' : 'Click or Drag & Drop image file from device'}</span>
+            <div className="space-y-2">
+              {uploadError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <span>{uploadError}</span>
+                  </div>
+                  <button
+                    onClick={() => setUploadError(null)}
+                    className="text-rose-600 hover:text-rose-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              <div
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => {
+                  if (!isUploading) {
+                    fileInputRef.current?.click();
+                  }
+                }}
+                className={`border border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                  dragOver
+                    ? 'border-[#9A7B61] bg-[#F4EFE6]'
+                    : 'border-[#D5C9B8] hover:border-[#9A7B61] bg-white'
+                } ${isUploading ? 'pointer-events-none opacity-85' : ''}`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFiles(e.target.files)}
+                  className="hidden"
+                />
+                
+                {isUploading ? (
+                  <div className="space-y-2 py-1">
+                    <div className="flex items-center justify-center gap-2 text-xs font-mono-code text-[#201D1A]">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9A7B61]" />
+                      <span>Uploading to Firebase Storage ({uploadProgress}%)...</span>
+                    </div>
+                    <div className="w-full max-w-xs mx-auto h-1.5 bg-[#E7E0D5] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#201D1A] transition-all duration-200 rounded-full"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center gap-2 text-xs font-mono-code text-[#6B645C]">
+                      <Upload className="w-3.5 h-3.5 text-[#9A7B61]" />
+                      <span>{dragOver ? 'Drop image here' : 'Click or Drag & Drop image file'}</span>
+                    </div>
+                    <span className="text-[10px] text-[#9C948A] block mt-1">PNG, JPG, WebP, SVG</span>
+                  </>
+                )}
               </div>
-              <span className="text-[10px] text-[#9C948A] block mt-1">PNG, JPG, WebP, SVG</span>
             </div>
           )}
 

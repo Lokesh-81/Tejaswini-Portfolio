@@ -23,6 +23,7 @@ import {
   onSnapshot,
   ref,
   uploadBytes,
+  uploadBytesResumable,
   getDownloadURL,
   deleteObject,
   signInWithEmailAndPassword,
@@ -122,7 +123,7 @@ interface PortfolioContextType {
     altText?: string,
     description?: string
   ) => Promise<boolean>;
-  uploadFileToStorage: (file: File, sectionName?: string) => Promise<MediaItem>;
+  uploadFileToStorage: (file: File, sectionName?: string, onProgress?: (percent: number) => void) => Promise<MediaItem>;
   updateMediaItem: (id: string, updates: Partial<MediaItem>) => Promise<boolean>;
   deleteMediaItem: (id: string) => Promise<boolean>;
 
@@ -952,22 +953,101 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return await syncToFirestore(updated);
   };
 
-  const uploadFileToStorage = async (file: File, sectionName?: string): Promise<MediaItem> => {
-    let finalUrl = '';
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
-    const mediaType: 'image' | 'pdf' | 'icon' = isPdf ? 'pdf' : isSvg ? 'icon' : 'image';
-    const readableSize = `${(file.size / 1024).toFixed(0)} KB`;
-
-    try {
-      const storageRef = ref(storage, `portfolio_assets/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-      const uploadResult = await uploadBytes(storageRef, file);
-      finalUrl = await getDownloadURL(uploadResult.ref);
-    } catch (err) {
-      console.warn('Firebase Storage upload warning (falling back to object URL):', err);
-      finalUrl = URL.createObjectURL(file);
+  const uploadFileToStorage = async (
+    file: File,
+    sectionName?: string,
+    onProgress?: (percent: number) => void
+  ): Promise<MediaItem> => {
+    // 1. Verify user authentication
+    if (!auth.currentUser) {
+      throw new Error('Authentication required: You must be logged in as an administrator to upload files.');
     }
 
+    // 2. Validate file type and size
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.pdf'];
+    const fileNameLower = file.name.toLowerCase();
+    const hasValidExtension = validExtensions.some(ext => fileNameLower.endsWith(ext));
+    if (!hasValidExtension && !file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      throw new Error(`Unsupported file type (${file.type || 'unknown'}). Please upload JPG, PNG, WebP, SVG, GIF, or PDF.`);
+    }
+
+    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 25 MB.`);
+    }
+
+    const isPdf = file.type === 'application/pdf' || fileNameLower.endsWith('.pdf');
+    const isSvg = file.type === 'image/svg+xml' || fileNameLower.endsWith('.svg');
+    const mediaType: 'image' | 'pdf' | 'icon' = isPdf ? 'pdf' : isSvg ? 'icon' : 'image';
+    const readableSize = file.size > 1024 * 1024 
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
+      : `${(file.size / 1024).toFixed(0)} KB`;
+
+    // 3. Prepare clean, unique storage path
+    const sanitizedName = file.name
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_+/g, '_');
+    const storagePath = `portfolio_assets/${Date.now()}_${sanitizedName}`;
+    const storageRef = ref(storage, storagePath);
+
+    // 4. Resumable upload with progress and 45s safety timeout
+    const contentType = file.type || (isPdf ? 'application/pdf' : isSvg ? 'image/svg+xml' : 'image/jpeg');
+    const uploadTask = uploadBytesResumable(storageRef, file, {
+      contentType,
+      cacheControl: 'public, max-age=31536000'
+    });
+
+    const uploadPromise = new Promise<string>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          if (snapshot.totalBytes > 0) {
+            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            if (onProgress) onProgress(percent);
+          }
+        },
+        (error) => {
+          console.error('Firebase Storage upload task error:', error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadUrl);
+          } catch (urlErr) {
+            console.error('Failed to get download URL after upload:', urlErr);
+            reject(urlErr);
+          }
+        }
+      );
+    });
+
+    // 45 second timeout race
+    const timeoutPromise = new Promise<string>((_, reject) => {
+      setTimeout(() => {
+        try {
+          uploadTask.cancel();
+        } catch (_) {
+          // ignore cancel error
+        }
+        reject(new Error('Firebase Storage upload timed out after 45 seconds. Please check your network connection and retry.'));
+      }, 45000);
+    });
+
+    let finalUrl: string;
+    try {
+      finalUrl = await Promise.race([uploadPromise, timeoutPromise]);
+    } catch (uploadErr: any) {
+      console.error('Firebase Storage upload failed:', uploadErr);
+      const message = uploadErr?.message || 'Storage upload failed. Please verify administrator permissions and network connectivity.';
+      throw new Error(message);
+    }
+
+    if (!finalUrl || !finalUrl.startsWith('http')) {
+      throw new Error('Upload completed but failed to obtain a valid public storage URL.');
+    }
+
+    // 5. Build MediaItem metadata
     const newMedia: MediaItem = {
       id: `media-${Date.now()}`,
       name: file.name,
@@ -980,11 +1060,17 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       description: `Uploaded ${file.name} to portfolio media library.`
     };
 
+    // 6. Persist to Firestore
     const updated: PortfolioData = {
       ...data,
       mediaLibrary: [newMedia, ...data.mediaLibrary]
     };
-    await syncToFirestore(updated);
+
+    const saved = await syncToFirestore(updated);
+    if (!saved) {
+      console.warn('Media file uploaded to storage but Firestore metadata sync returned false. Local state preserved.');
+    }
+
     return newMedia;
   };
 

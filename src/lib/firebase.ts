@@ -12,7 +12,7 @@ import {
   User 
 } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, updateDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import bundledFirebaseConfig from '../../firebase-applet-config.json';
 
 // Support customizable environment variables for migration to a new Firebase project or Vercel deployment
@@ -79,6 +79,7 @@ export {
   collection,
   ref,
   uploadBytes,
+  uploadBytesResumable,
   getDownloadURL,
   deleteObject
 };

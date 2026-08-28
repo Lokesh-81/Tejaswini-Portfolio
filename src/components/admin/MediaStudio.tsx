@@ -10,7 +10,11 @@ import {
   ExternalLink, 
   Search, 
   HardDrive,
-  Plus
+  Plus,
+  AlertCircle,
+  X,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 
 export const MediaStudio: React.FC = () => {
@@ -20,12 +24,18 @@ export const MediaStudio: React.FC = () => {
   const [filterType, setFilterType] = useState<'all' | 'image' | 'pdf' | 'icon'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadStatusText, setUploadStatusText] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showDriveInput, setShowDriveInput] = useState(false);
   const [driveUrl, setDriveUrl] = useState('');
   const [driveName, setDriveName] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef<number>(0);
 
   const convertGoogleDriveUrl = (url: string): string => {
     if (!url) return '';
@@ -43,17 +53,88 @@ export const MediaStudio: React.FC = () => {
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (isUploading) return;
+
+    setUploadError(null);
+    setUploadSuccess(null);
     setIsUploading(true);
+    setUploadProgress(0);
+
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.pdf'];
+    let lastUploaded: MediaItem | null = null;
+    let uploadedCount = 0;
+
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const newMedia = await uploadFileToStorage(file, 'General Studio Assets');
-        setSelectedItem(newMedia);
+        const fileNameLower = file.name.toLowerCase();
+        const hasValidExtension = validExtensions.some(ext => fileNameLower.endsWith(ext));
+
+        if (!hasValidExtension && !file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          throw new Error(`Unsupported file "${file.name}". Please select PNG, JPG, WebP, SVG, GIF, or PDF.`);
+        }
+
+        setUploadStatusText(`Uploading ${file.name} (${i + 1}/${files.length})...`);
+        
+        const newMedia = await uploadFileToStorage(
+          file, 
+          'General Studio Assets',
+          (percent) => setUploadProgress(percent)
+        );
+
+        lastUploaded = newMedia;
+        uploadedCount++;
       }
-    } catch (err) {
+
+      if (lastUploaded) {
+        setSelectedItem(lastUploaded);
+      }
+      setUploadSuccess(`Successfully uploaded and saved ${uploadedCount} file${uploadedCount > 1 ? 's' : ''} to Firebase Storage.`);
+      setTimeout(() => setUploadSuccess(null), 5000);
+    } catch (err: any) {
       console.error('File upload error:', err);
+      setUploadError(err?.message || 'Failed to upload file to Firebase Storage. Please check permissions and retry.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      setUploadStatusText('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      setIsDragOver(false);
+      dragCounterRef.current = 0;
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    dragCounterRef.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files);
     }
   };
 
@@ -187,21 +268,86 @@ export const MediaStudio: React.FC = () => {
         </form>
       )}
 
+      {/* Error and Success Feedback Alerts */}
+      {uploadError && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-3 animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold font-mono-code uppercase">Upload Failed</p>
+              <p className="mt-0.5 text-rose-700">{uploadError}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setUploadError(null)}
+            className="text-rose-600 hover:text-rose-900 p-1 rounded-lg hover:bg-rose-100 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {uploadSuccess && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <p className="font-medium">{uploadSuccess}</p>
+          </div>
+          <button
+            onClick={() => setUploadSuccess(null)}
+            className="text-emerald-600 hover:text-emerald-900 p-1 rounded-lg hover:bg-emerald-100 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Drag & Drop Upload Zone */}
       <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          handleFileUpload(e.dataTransfer.files);
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => {
+          if (!isUploading) {
+            fileInputRef.current?.click();
+          }
         }}
-        onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-[#D5C9B8] hover:border-[#9A7B61] rounded-3xl p-8 text-center bg-white/60 hover:bg-white transition-all cursor-pointer group shadow-2xs"
+        className={`border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer group shadow-2xs ${
+          isDragOver
+            ? 'border-[#9A7B61] bg-[#F4EFE6] scale-[1.01]'
+            : 'border-[#D5C9B8] hover:border-[#9A7B61] bg-white/60 hover:bg-white'
+        } ${isUploading ? 'pointer-events-none opacity-80' : ''}`}
       >
         <div className="w-12 h-12 rounded-2xl bg-[#FAF8F5] border border-[#E2D9CC] flex items-center justify-center text-[#7C5E47] mx-auto mb-3 group-hover:scale-105 transition-transform">
-          <Upload className="w-6 h-6" />
+          {isUploading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-[#9A7B61]" />
+          ) : (
+            <Upload className="w-6 h-6" />
+          )}
         </div>
-        <h4 className="text-sm font-serif text-[#201D1A] font-medium mb-1">Drag and drop images, PDFs, or banners</h4>
-        <p className="text-xs text-[#6B645C]">Supports PNG, JPG, WebP, SVG, and PDF documents. Synced with cloud storage.</p>
+        
+        {isUploading ? (
+          <div className="space-y-3 max-w-sm mx-auto">
+            <h4 className="text-sm font-serif text-[#201D1A] font-medium">{uploadStatusText || 'Uploading to Firebase Storage...'}</h4>
+            <div className="w-full h-2 bg-[#E7E0D5] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#201D1A] transition-all duration-300 rounded-full"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="text-[11px] font-mono-code text-[#7A7268]">{uploadProgress}% complete</p>
+          </div>
+        ) : (
+          <>
+            <h4 className="text-sm font-serif text-[#201D1A] font-medium mb-1">
+              {isDragOver ? 'Drop files here to upload' : 'Drag and drop images, PDFs, or banners'}
+            </h4>
+            <p className="text-xs text-[#6B645C]">
+              Supports PNG, JPG, WebP, SVG, and PDF. Directly persisted to Firebase Storage.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
